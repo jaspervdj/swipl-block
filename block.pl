@@ -1,11 +1,16 @@
-:- dynamic blocking/3.
+:- dynamic blocking/2.
 
 :- op(1150,fx,block).
 
 block(X):-
     parse_block(1, X, L),
-    writeln('Blocking at: '),
-    writeln(L).
+    functor(X, Name, _),
+
+    write('Blocking '),
+    write(Name),
+    write(' at: '),
+    writeln(L),
+    assert(blocking(Name, L)).
 
 % Parse a block specification. Third argument is the return value: a list of
 % indices at which the code should block.
@@ -44,10 +49,15 @@ eval(G) :-
             C
         )
 
-    ;
-        clause(G, NG),
-        writeln(NG),
-        eval(NG)
+    ; functor(G, Name, Args) ->
+        ( blocking(Name, L) ->
+            writeln('Caught blocking call!')
+
+        ;
+            clause(G, NG),
+            writeln(NG),
+            eval(NG)
+        )
     ).
 
 % eval((G1,G2)) :- !,
