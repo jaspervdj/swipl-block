@@ -4,7 +4,22 @@
 % Parsing and evaluating the block operators                                   %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-:- dynamic blocking/2.
+% We keep a dynamic predicate of predicates at which we should block. In this 
+% structure, we store a triple for each blocking predicate. This triple holds:
+%
+% - The name of the predicate
+% - Its arity
+% - The indices of the arguments that need to be instantiated.
+%
+% For example,
+%
+%     :- block merge(-,?,-), merge(?,-,-).
+%
+% will result in the triples:
+%
+% - (merge, 3, [1, 3])
+% - (merge, 3, [2, 3])
+:- dynamic blocking/3.
 
 :- op(1150,fx,block).
 
@@ -15,17 +30,19 @@ block((X,Y)) :-
     block(Y).
 block(X):-
     parse_block(1, X, L),
-    functor(X, Name, _),
+    functor(X, Name, Arity),
 
     % Write some debug information
-    % write('Blocking '),
-    % write(Name),
-    % write(' at: '),
-    % writeln(L),
+    write('Blocking '),
+    write(Name),
+    write('/'),
+    write(Arity),
+    write(' at: '),
+    writeln(L),
 
     % write('Asserting: '),
     % writeln((blocking(Name, L))),
-    assert(blocking(Name, L)).
+    assert(blocking(Name, Arity, L)).
 
 % Parse a block specification. Third argument is the return value: a list of
 % indices at which the code should block.
@@ -46,8 +63,8 @@ parse_block(N, X, L) :-
 
 % Check whether or not a clause should block, based on already added rules
 should_block(G) :-
-    functor(G, N, _),
-    findall(X, (blocking(N, L), blocking_args(G, L, B), length(B, X)), Lens),
+    functor(G, N, A),
+    findall(X, (blocking(N, A, L), blocking_args(G, L, B), length(B, X)), Lens),
     findall(X, (member(X, Lens), X > 0), Blocking),
     length(Blocking, X),
     X > 0.
@@ -68,9 +85,9 @@ blocking_args(G, [I|Is], Blocking) :-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 eval(G) :-
-    eval_blocking(G, [], _).
+    eval(G, [], _).
 
-eval_blocking(G, Blocking, Blocked) :-
+eval(G, Blocking, Blocked) :-
     % write('Evaluating: '),
     % writeln(G),
 
@@ -82,11 +99,11 @@ eval_blocking(G, Blocking, Blocked) :-
         % writeln(R),
 
         delete(Blocking, R, B),
-        eval_blocking((R, G), B, Blocked)
+        eval((R, G), B, Blocked)
 
     ; (G1, G2) = G ->
-        eval_blocking(G1, Blocking, B1),
-        eval_blocking(G2, B1, Blocked)
+        eval(G1, Blocking, B1),
+        eval(G2, B1, Blocked)
 
     ; true = G ->
         Blocked = Blocking,
@@ -102,30 +119,17 @@ eval_blocking(G, Blocking, Blocked) :-
 
     ; (A -> B; C) = G ->
         (A ->
-            eval_blocking(B, Blocking, Blocked)
+            eval(B, Blocking, Blocked)
         ;
-            eval_blocking(C, Blocking, Blocked)
+            eval(C, Blocking, Blocked)
         )
 
-    ; functor(G, Name, Args) ->
-        ( blocking(Name, L) ->
-            ( should_block(G) ->
-                % write('Caught blocking call: '),
-                % writeln(G),
-
-                Blocked = [G | Blocking]
-            ;
-                % writeln('Sufficiently instantiated'),
-                clause(G, NG),
-                eval_blocking(NG, Blocking, Blocked)
-            )
+    ; functor(G, _, _) ->
+        ( should_block(G) ->
+            Blocked = [G | Blocking]
         ;
-            % write('Calling: '),
-            % writeln(Name),
             clause(G, NG),
-            % write('Found clauses: '),
-            % writeln(NG),
-            eval_blocking(NG, Blocking, Blocked)
+            eval(NG, Blocking, Blocked)
         )
     ).
 
@@ -169,3 +173,30 @@ merge([H|X], [E|Y], [H|Z]) :-
 merge([H|X], [E|Y], [E|Z]) :-
     H @>= E,
 merge([H|X], Y, Z).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% N-Queens                                                                     %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+queens(N,Qs) :-
+    range(1,N,Ns),
+    permute(Ns,Qs),
+    safe(Qs).
+
+range(L,U,R) :-
+    findall(X,between(L,U,X),R).
+
+safe([Q|Qs]) :-
+    no_attack(Q,Qs),
+    safe(Qs).
+safe([]).
+
+no_attack(X,Xs) :-
+    no_attack(X,1,Xs).
+
+no_attack(_,_,[]).
+no_attack(X,N,[Y|Ys]) :-
+    X =\= Y + N,
+    X =\= Y - N,
+    N1 is N + 1,
+    no_attack(X,N1,Ys).
