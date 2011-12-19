@@ -136,13 +136,12 @@ eval(G, Blocking, Blocked) :-
             eval(C, Blocking, Blocked)
         )
 
-    ; functor(G, _, _) ->
-        ( should_block(G) ->
-            Blocked = [G | Blocking]
-        ;
-            clause(G, NG),
-            eval(NG, Blocking, Blocked)
-        )
+    ; should_block(G) ->
+        Blocked = [G | Blocking]
+
+    ;
+        clause(G, NG),
+        eval(NG, Blocking, Blocked)
     ).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
