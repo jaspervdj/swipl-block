@@ -1,3 +1,5 @@
+:- use_module(library(lists)).
+
 :- dynamic blocking/2.
 
 :- op(1150,fx,block).
@@ -51,17 +53,30 @@ blocking_args(_, [], []).
 blocking_args(G, [I|Is], Blocking) :-
     blocking_args(G, Is, B),
     arg(I, G, X),
-    ( var(X) ->
-        Blocking = [I|B]
-    ;
+    ( ground(X) ->
         Blocking = B
+    ;
+        Blocking = [I|B]
     ).
 
 eval_blocking_wrap(G) :-
     eval_blocking(G, [], _).
 
 eval_blocking(G, Blocking, Blocked) :-
-    ( (G1, G2) = G ->
+    write('Evaluating: '),
+    writeln(G),
+
+    findall(X, (member(X, Blocking), not(should_block(X))), Runnable),
+    writeln(Runnable),
+
+    ( [R | _] = Runnable ->
+        write('Resuming: '),
+        writeln(R),
+
+        delete(Blocking, R, B),
+        eval_blocking((R, G), B, Blocked)
+
+    ; (G1, G2) = G ->
         eval_blocking(G1, Blocking, B1),
         eval_blocking(G2, B1, Blocked)
 
@@ -73,6 +88,10 @@ eval_blocking(G, Blocking, Blocked) :-
         Blocked = Blocking,
         X = Y
 
+    ; (X =< Y) = G ->
+        Blocked = Blocking,
+        X =< Y
+
     ; (A -> B; C) = G ->
         (A ->
             eval_blocking(B, Blocking, Blocked)
@@ -82,10 +101,21 @@ eval_blocking(G, Blocking, Blocked) :-
 
     ; functor(G, Name, Args) ->
         ( blocking(Name, L) ->
-            writeln('Caught blocking call!')
+            ( should_block(G) ->
+                write('Caught blocking call: '),
+                writeln(G),
 
+                Blocked = [G | Blocking]
+            ;
+                writeln('Sufficiently instantiated'),
+                clause(G, NG),
+                eval_blocking(NG, Blocking, Blocked)
+            )
         ;
+            write('Calling: '),
+            writeln(Name),
             clause(G, NG),
+            write('Found clauses: '),
             writeln(NG),
             eval_blocking(NG, Blocking, Blocked)
         )
@@ -93,14 +123,25 @@ eval_blocking(G, Blocking, Blocked) :-
 
 eval(G) :-
     ( (G1, G2) = G ->
-        eval(G1),
-        eval(G2)
+        ( should_block(G1) ->
+            write('Delaying '),
+            writeln(G1),
+
+            eval(G2),
+            eval(G1)
+        ;
+            eval(G2),
+            eval(G1)
+        )
 
     ; true = G ->
         true
 
     ; (X = Y) = G ->
         X = Y
+
+    ; (X =< Y) = G ->
+        X =< Y
 
     ; (A -> B; C) = G ->
         (A ->
@@ -110,14 +151,8 @@ eval(G) :-
         )
 
     ; functor(G, Name, Args) ->
-        ( blocking(Name, L) ->
-            writeln('Caught blocking call!')
-
-        ;
-            clause(G, NG),
-            writeln(NG),
-            eval(NG)
-        )
+        clause(G, NG),
+        eval(NG)
     ).
 
 % eval((G1,G2)) :- !,
@@ -143,15 +178,16 @@ merge([H|X], Y, Z).
 
 psort(L, R) :-
     sorted(R),
-    permute(L, R),
+    permute(L, R).
 
 permute([], []).
-permute(L, [X|R]) :-
-    select(X, L, R1),
-    permute(R1, R).
+permute(L, [X | P]) :-
+    select(X, L, L1),
+    permute(L1, P).
 
+:- block sorted(-).
 sorted([]).
 sorted([_]).
-sorted([X|[Y|Z]]) :-
+sorted([X | [Y | Z]]) :-
     X =< Y,
-    sorted([Y|Z]).
+    sorted([Y | Z]).
