@@ -40,15 +40,11 @@ parse_block(N, X, L) :-
 
 % Check whether or not a clause should block, based on already added rules
 should_block(G) :-
-    functor(G, Name, _),
-    ( blocking(Name, L) ->
-        blocking_args(G, L, Blocking),
-
-        length(Blocking, Len),
-        Len > 0
-    ;
-        false
-    ).
+    functor(G, N, _),
+    findall(X, (blocking(N, L), blocking_args(G, L, B), length(B, X)), Lens),
+    findall(X, (member(X, Lens), X > 0), Blocking),
+    length(Blocking, X),
+    X > 0.
 
 % Check for a single argument
 blocking_args(_, [], []).
@@ -134,8 +130,8 @@ eval(G) :-
     % clause(G,NG),
     % eval(NG).
 
-% :- block merge(-,?,-), merge(?,-,-).
-:- block merge(-,?,-).
+:- block merge(-,?,-), merge(?,-,-).
+% :- block merge(-,?,-).
 merge([], Y, Y).
 merge(X, [], X).
 merge([H|X], [E|Y], [H|Z]) :-
