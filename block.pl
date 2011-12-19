@@ -54,22 +54,23 @@ parse_block(N,X,L) :-
         arg(N,X,Descr),
         N1 is N + 1,
         parse_block(N1,X,L1),
-        ( Descr = '?' ->
-            L = L1
-        ;
+        ( Descr = '-' ->
             L = [N|L1]
+        ;
+            L = L1
         )
     ).
 
 % Check whether or not a clause should block, based on already added rules
 should_block(G) :-
     functor(G,N,A),
-    findall(X,(blocking(N,A,L),blocking_args(G,L,B),length(B,X)),Lens),
-    findall(X,(member(X,Lens),X > 0),Blocking),
-    length(Blocking,X),
+    findall(B,(blocking(N,A,L),blocking_args(G,L,B),L = B),Lens),
+    length(Lens,X),
     X > 0.
 
-% Check for a single argument
+% Given a term and a list of argument indices at which the term call should
+% block when the argument is uninstantiated, generate the indices at which we
+% will actually block.
 blocking_args(_,[],[]).
 blocking_args(G,[I|Is],Blocking) :-
     blocking_args(G,Is,B),
@@ -144,12 +145,29 @@ eval(G,Blocking,Blocked) :-
         )
 
     ; should_block(G) ->
+        % write('Blocking on: '),
+        % writeln(G),
+
         Blocked = [G|Blocking]
 
     ;
         clause(G,NG),
         eval(NG,Blocking,Blocked)
     ).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% merge                                                                        %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- block merge(-,?,-),merge(?,-,-).
+merge([],Y,Y).
+merge(X,[],X).
+merge([H|X],[E|Y],[H|Z]) :-
+    H @< E,
+    merge(X,[E|Y],Z).
+merge([H|X],[E|Y],[E|Z]) :-
+    H @>= E,
+merge([H|X],Y,Z).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % psort                                                                        %
@@ -171,26 +189,12 @@ sorted([X|[Y|Z]]) :-
 
 % Auxiliary function which allows us to block until the first two elements of
 % the list have become available.
-:- block sorted2(-,-,?).
+:- block sorted2(-,?,?),sorted2(?,-,?).
 sorted2(X,Y,[]) :-
     X =< Y.
 sorted2(X,Y,[Z|Zr]) :-
     X =< Y,
     sorted2(Y,Z,Zr).
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% merge                                                                        %
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-:- block merge(-,?,-),merge(?,-,-).
-merge([],Y,Y).
-merge(X,[],X).
-merge([H|X],[E|Y],[H|Z]) :-
-    H @< E,
-    merge(X,[E|Y],Z).
-merge([H|X],[E|Y],[E|Z]) :-
-    H @>= E,
-merge([H|X],Y,Z).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % N-Queens                                                                     %
@@ -220,7 +224,7 @@ no_attack(X,[Y|Z]) :-
 
 % Again we have an auxiliary function so we can block on the first two elements
 % in the list.
-:- block no_attack(-,-,-,?).
+:- block no_attack(-,?,?,?),no_attack(?,-,?,?).
 no_attack(X,Y,N,[]) :-
     X =\= Y + N,
     X =\= Y - N.
