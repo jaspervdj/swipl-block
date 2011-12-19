@@ -113,9 +113,21 @@ eval(G, Blocking, Blocked) :-
         Blocked = Blocking,
         X = Y
 
+    ; (X =\= Y) = G ->
+        Blocked = Blocking,
+        X =\= Y
+
     ; (X =< Y) = G ->
         Blocked = Blocking,
         X =< Y
+
+    ; (X is Y) = G ->
+        Blocked = Blocking,
+        X is Y
+
+    ; findall(X, P, L) = G ->
+        Blocked = Blocking,
+        findall(X, P, L)
 
     ; (A -> B; C) = G ->
         (A ->
