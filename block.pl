@@ -85,9 +85,21 @@ blocking_args(G,[I|Is],Blocking) :-
 % The interpreter which takes block operators into account                     %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+% Main entry point to the interpreter
 eval(G) :-
-    eval(G,[],_).
+    eval(G,[]).
 
+% Interpreter which allows an additional list of currently blocking computations
+eval(G,Blocking) :-
+    eval(G,Blocking,Blocked),
+    ( [B|Bs] = Blocked ->
+        eval(B,Bs)
+    ;
+        true
+    ).
+
+% Interpreter which takes a list of currently blocking computations, and returns
+% an updated list of blocked computations
 eval(G,Blocking,Blocked) :-
     % write('Evaluating: '),
     % writeln(G),
@@ -124,6 +136,14 @@ eval(G,Blocking,Blocked) :-
     ; (X =< Y) = G ->
         Blocked = Blocking,
         X =< Y
+
+    ; (X @< Y) = G ->
+        Blocked = Blocking,
+        X @< Y
+
+    ; (X @>= Y) = G ->
+        Blocked = Blocking,
+        X @>= Y
 
     ; (X is Y) = G ->
         Blocked = Blocking,
