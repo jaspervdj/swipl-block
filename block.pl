@@ -1,5 +1,9 @@
 :- use_module(library(lists)).
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Parsing and evaluating the block operators                                   %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 :- dynamic blocking/2.
 
 :- op(1150,fx,block).
@@ -14,13 +18,13 @@ block(X):-
     functor(X, Name, _),
 
     % Write some debug information
-    write('Blocking '),
-    write(Name),
-    write(' at: '),
-    writeln(L),
+    % write('Blocking '),
+    % write(Name),
+    % write(' at: '),
+    % writeln(L),
 
-    write('Asserting: '),
-    writeln((blocking(Name, L))),
+    % write('Asserting: '),
+    % writeln((blocking(Name, L))),
     assert(blocking(Name, L)).
 
 % Parse a block specification. Third argument is the return value: a list of
@@ -59,19 +63,23 @@ blocking_args(G, [I|Is], Blocking) :-
         Blocking = [I|B]
     ).
 
-eval_blocking_wrap(G) :-
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% The interpreter which takes block operators into account                     %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+eval(G) :-
     eval_blocking(G, [], _).
 
 eval_blocking(G, Blocking, Blocked) :-
-    write('Evaluating: '),
-    writeln(G),
+    % write('Evaluating: '),
+    % writeln(G),
 
     findall(X, (member(X, Blocking), not(should_block(X))), Runnable),
-    writeln(Runnable),
+    % writeln(Runnable),
 
     ( [R | _] = Runnable ->
-        write('Resuming: '),
-        writeln(R),
+        % write('Resuming: '),
+        % writeln(R),
 
         delete(Blocking, R, B),
         eval_blocking((R, G), B, Blocked)
@@ -102,79 +110,28 @@ eval_blocking(G, Blocking, Blocked) :-
     ; functor(G, Name, Args) ->
         ( blocking(Name, L) ->
             ( should_block(G) ->
-                write('Caught blocking call: '),
-                writeln(G),
+                % write('Caught blocking call: '),
+                % writeln(G),
 
                 Blocked = [G | Blocking]
             ;
-                writeln('Sufficiently instantiated'),
+                % writeln('Sufficiently instantiated'),
                 clause(G, NG),
                 eval_blocking(NG, Blocking, Blocked)
             )
         ;
-            write('Calling: '),
-            writeln(Name),
+            % write('Calling: '),
+            % writeln(Name),
             clause(G, NG),
-            write('Found clauses: '),
-            writeln(NG),
+            % write('Found clauses: '),
+            % writeln(NG),
             eval_blocking(NG, Blocking, Blocked)
         )
     ).
 
-eval(G) :-
-    ( (G1, G2) = G ->
-        ( should_block(G1) ->
-            write('Delaying '),
-            writeln(G1),
-
-            eval(G2),
-            eval(G1)
-        ;
-            eval(G2),
-            eval(G1)
-        )
-
-    ; true = G ->
-        true
-
-    ; (X = Y) = G ->
-        X = Y
-
-    ; (X =< Y) = G ->
-        X =< Y
-
-    ; (A -> B; C) = G ->
-        (A ->
-            B
-        ;
-            C
-        )
-
-    ; functor(G, Name, Args) ->
-        clause(G, NG),
-        eval(NG)
-    ).
-
-% eval((G1,G2)) :- !,
-    % eval(G1),
-    % eval(G2).
-% eval(true) :- !.
-% eval(X = Y) :- !,
-    % X = Y.
-% eval(G) :-
-    % clause(G,NG),
-    % eval(NG).
-
-:- block merge(-,?,-), merge(?,-,-).
-% :- block merge(-,?,-).
-merge([], Y, Y).
-merge(X, [], X).
-merge([H|X], [E|Y], [H|Z]) :-
-    H @< E,
-    merge(X, [E|Y], Z).
-merge([H|X], [E|Y], [E|Z]) :-
-    H @>= E,
-merge([H|X], Y, Z).
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% psort                                                                        %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 psort(L, R) :-
     sorted(R),
@@ -185,9 +142,30 @@ permute(L, [X | P]) :-
     select(X, L, L1),
     permute(L1, P).
 
-:- block sorted(-).
 sorted([]).
 sorted([_]).
 sorted([X | [Y | Z]]) :-
+    sorted2(X, Y, Z).
+
+% Auxiliary function which allows us to block until the first two elements of
+% the list have become available.
+:- block sorted2(-, -, ?).
+sorted2(X, Y, []) :-
+    X =< Y.
+sorted2(X, Y, [Z | Zr]) :-
     X =< Y,
-    sorted([Y | Z]).
+    sorted2(Y, Z, Zr).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% merge                                                                        %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- block merge(-,?,-), merge(?,-,-).
+merge([], Y, Y).
+merge(X, [], X).
+merge([H|X], [E|Y], [H|Z]) :-
+    H @< E,
+    merge(X, [E|Y], Z).
+merge([H|X], [E|Y], [E|Z]) :-
+    H @>= E,
+merge([H|X], Y, Z).
