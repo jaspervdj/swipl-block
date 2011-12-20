@@ -1,13 +1,10 @@
 :- use_module(library(apply)).
 :- use_module(block).
 
-% Right fold using a constructor
-foldr1(_, [X], X).
-foldr1(P, [X|Xs], R) :-
-    foldr1(P, Xs, Y), 
-    functor(R, P, 2),
-    arg(1, R, X),
-    arg(2, R, Y).
+% Convert a list to tuples e.g. [a, b, c] -> (a, (b, c)).
+tuples([X], X).
+tuples([X|Xs], (X, Y)) :-
+    tuples(Xs, Y).
 
 % Given a list of indices, get a list of arguments at these indices
 collect_args(_, [], []).
@@ -19,7 +16,7 @@ collect_args(Head, [I|Is], [A|As]) :-
 block_when(Head, Is, C) :-
     collect_args(Head, Is, Args),
     grounds(Args, Grounds),
-    foldr1((,), Grounds, C).
+    tuples(Grounds, C).
 
 % Apply the ground constructor to each element
 grounds([], []).
@@ -39,7 +36,7 @@ term_expansion(In, Out) :-
     maplist(block_when(Head), Blocking, Whens),
 
     % Finally, we chain these conditions together
-    foldr1((,), Whens, When),
+    tuples(Whens, When),
 
     write('For '),
     write(Head),
