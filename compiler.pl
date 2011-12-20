@@ -1,31 +1,19 @@
+:- use_module(library(apply)).
 :- use_module(block).
 
-term_expansion(In, Out) :-
-    write('Expanding '),
-    writeln(In),
-
-    (Head :- Body) = In,
-    functor(Head, Name, Arity),
-
-    write('Checking: '),
-    write(Name),
-    write('/'),
-    writeln(Arity),
-
-    % We generate a list of lists with indices of arguments at which the
-    % predicate should block
-    findall(X, blocking(Name, Arity, X), Blocking),
-
-    write('Blocking: '),
-    writeln(Xs),
-
-    Out = (Head :- Body).
+% Right fold using a constructor
+foldr1(_, [X], X).
+foldr1(P, [X|Xs], R) :-
+    foldr1(P, Xs, Y), 
+    functor(R, P, 2),
+    arg(1, R, X),
+    arg(2, R, Y).
 
 % Given a list of indices, get a list of arguments at these indices
 collect_args(_, [], []).
 collect_args(Head, [I|Is], [A|As]) :-
-    arg(I,Head,A),
-    collect_args(Head,Is,As).
+    arg(I, Head, A),
+    collect_args(Head, Is, As).
 
 % Given a list of indices at which we should block, generate a when condition
 block_when(Head, Is, C) :-
@@ -39,19 +27,26 @@ grounds([X|Xs], [Y|Ys]) :-
     Y = ground(X),
     grounds(Xs, Ys).
 
-% Right fold using a constructor
-foldr1(_, [X], X).
-foldr1(P, [X|Xs], R) :-
-    foldr1(P, Xs, Y), 
-    functor(R, P, 2),
-    arg(1, R, X),
-    arg(2, R, Y).
+term_expansion(In, Out) :-
+    (Head :- Body) = In,
+    functor(Head, Name, Arity),
 
-when_and([X], C) :-
-    C = ground(X).
-when_and([X|Xs], C) :-
-    when_or(Xs, Y),
-    C = (ground(X), Y).
+    % We generate a list of lists with indices of arguments at which the
+    % predicate should block
+    findall(X, blocking(Name, Arity, X), Blocking),
+
+    % For each element, we generate a when condition
+    maplist(block_when(Head), Blocking, Whens),
+
+    % Finally, we chain these conditions together
+    foldr1((;), Whens, When),
+
+    write('For '),
+    write(Head),
+    write(' condition: '),
+    writeln(When),
+
+    Out = (Head :- when(When, Body)).
 
 :- block increment(-,?).
 increment(X,Y) :-
