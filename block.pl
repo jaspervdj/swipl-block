@@ -1,5 +1,5 @@
 % Module providing Parsing and analyzing the block operators
-:- module(block, [op(1150,fx,block), block/1, should_block/1]).
+:- module(block, [op(1150,fx,block), block/1, blocking/3, should_block/1]).
 
 % We keep a dynamic predicate of predicates at which we should block. In this 
 % structure, we store a triple for each blocking predicate. This triple holds:
