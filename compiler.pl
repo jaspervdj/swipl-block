@@ -39,7 +39,7 @@ term_expansion(In, Out) :-
     maplist(block_when(Head), Blocking, Whens),
 
     % Finally, we chain these conditions together
-    foldr1((;), Whens, When),
+    foldr1((,), Whens, When),
 
     write('For '),
     write(Head),
@@ -51,3 +51,82 @@ term_expansion(In, Out) :-
 :- block increment(-,?).
 increment(X,Y) :-
     Y is X + 1.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% merge                                                                        %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- block merge(-, ?, -), merge(?, -, -).
+merge([], Y, Y).
+merge(X, [], X).
+merge([H|X], [E|Y], [H|Z]) :-
+    H @< E,
+    merge(X, [E|Y], Z).
+merge([H|X], [E|Y], [E|Z]) :-
+    H @>= E,
+merge([H|X], Y, Z).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% psort                                                                        %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+psort(L, R) :-
+    sorted(R),
+    permute(L, R).
+
+permute([], []).
+permute(L, [X|P]) :-
+    select(X, L, L1),
+    permute(L1, P).
+
+sorted([]).
+sorted([_]).
+sorted([X|[Y|Z]]) :-
+    sorted2(X, Y, Z).
+
+% Auxiliary function which allows us to block until the first two elements of
+% the list have become available.
+:- block sorted2(-, ?, ?), sorted2(?, -, ?).
+sorted2(X, Y, []) :-
+    X =< Y.
+sorted2(X, Y, [Z|Zr]) :-
+    X =< Y,
+    sorted2(Y, Z, Zr).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% N-Queens                                                                     %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+queens(N, Qs) :-
+    range(1, N, Ns),
+
+    % This seems necessary in order to restrict the length of `Qs`. Without this
+    % line, `safe` will generate arbitrarily long lists.
+    length(Qs, N),
+
+    safe(Qs),
+    permute(Ns, Qs).
+
+range(L, U, R) :-
+    findall(X, between(L, U, X), R).
+
+safe([Q|Qs]) :-
+    no_attack(Q, Qs),
+    safe(Qs).
+safe([]).
+
+no_attack(_, []).
+no_attack(X, [Y|Z]) :-
+    no_attack(X, Y, 1, Z).
+
+% Again we have an auxiliary function so we can block on the first two elements
+% in the list.
+:- block no_attack(-, ?, ?, ?), no_attack(?, -, ?, ?).
+no_attack(X, Y, N, []) :-
+    X =\= Y + N,
+    X =\= Y - N.
+no_attack(X, Y, N, [Z|Zs]) :-
+    X =\= Y + N,
+    X =\= Y - N,
+    N1 is N + 1,
+    no_attack(X, Z, N1, Zs).
