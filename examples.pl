@@ -35,7 +35,7 @@ permute(L, [X|P]) :-
 sorted([]).
 sorted([_]).
 sorted([X|[Y|Z]]) :-
-    sorted2(X, Y, Z).
+    sorted(X, Y, Z).
 
 % Auxiliary function which allows us to block until the first two elements of
 % the list have become available.
