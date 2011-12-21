@@ -28,16 +28,7 @@ grounds([], []).
 grounds([X|Xs], [ground(X)|Ys]) :-
     grounds(Xs, Ys).
 
-add_body(P, Head, Body) :-
-    ( (Head :- Body) = P ->
-        true
-    ;
-        Head = P,
-        Body = true
-    ).
-
 compile(In, Out) :-
-    % add_body(In, Head, Body),
     (Head :- Body) = In,
 
     % (Head :- Body) = In,
