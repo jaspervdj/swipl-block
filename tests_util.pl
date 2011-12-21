@@ -1,4 +1,4 @@
-:- module(test, [test_equal/3, test_fail/2]).
+:- module(tests_util, [test_equal/3, test_fail/2]).
 
 test_equal(Name, Expected, Got) :-
     write('Testing '),

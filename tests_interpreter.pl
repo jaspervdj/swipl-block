@@ -1,6 +1,6 @@
 :- use_module(examples).
 :- use_module(interpreter).
-:- use_module(test).
+:- use_module(tests_util).
 
 test_all :-
     test_merge_1,
