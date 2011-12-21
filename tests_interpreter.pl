@@ -6,6 +6,7 @@ test_all :-
     test_merge_1,
     test_merge_2,
     test_merge_3,
+    test_merge_4,
     test_queens_1,
     test_psort_1.
 
@@ -18,6 +19,10 @@ test_merge_2 :-
 test_merge_3 :-
     eval(merge([2], X, [1, 2])),
     test_equal(test_merge_3, [1], X).
+
+test_merge_4 :-
+    eval((merge(X, [2, 4], Y), X = [1, 3])),
+    test_equal(test_merge_4, [1, 2, 3, 4], Y).
 
 test_queens_1 :-
     eval(queens(10, Qs)),

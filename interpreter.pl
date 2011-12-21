@@ -9,18 +9,20 @@
 
 % Main entry point to the interpreter
 eval(G) :-
-    eval(G, []).
+    eval_loop(G, [], true).
 
 % Interpreter which allows an additional list of currently blocking computations
-eval(G, Blocking) :-
+eval_loop(G, Blocking, FirstRun) :-
+    length(Blocking, B1),
     eval(G, Blocking, Blocked),
+    length(Blocked, B2),
     ( [B|Bs] = Blocked ->
         % If B and G can be unified, we need to get out, otherwise we'd be
         % blocking forever.
-        ( B = G ->
+        ( (not(FirstRun), B1 =< B2) ->
             false
         ;
-            eval(B, Bs)
+            eval_loop(B, Bs, false)
         )
     ;
         true
