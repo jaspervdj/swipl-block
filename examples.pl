@@ -1,5 +1,5 @@
 :- module(examples, [
-    merge/3,
+    merge2/3,
     psort/2, permute/2, sorted/1, sorted/3,
     queens/2, range/3, safe/1, no_attack/2, no_attack/4]).
 
@@ -9,15 +9,15 @@
 % merge                                                                        %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-:- block merge(-, ?, -), merge(?, -, -).
-merge([], Y, Y).
-merge(X, [], X).
-merge([H|X], [E|Y], [H|Z]) :-
+:- block merge2(-, ?, -), merge2(?, -, -).
+merge2([], Y, Y).
+merge2(X, [], X).
+merge2([H|X], [E|Y], [H|Z]) :-
     H @< E,
-    merge(X, [E|Y], Z).
-merge([H|X], [E|Y], [E|Z]) :-
+    merge2(X, [E|Y], Z).
+merge2([H|X], [E|Y], [E|Z]) :-
     H @>= E,
-    merge([H|X], Y, Z).
+    merge2([H|X], Y, Z).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % psort                                                                        %

@@ -14,11 +14,11 @@ test_all :-
     test_psort_1.
 
 test_merge_1 :-
-    examples:merge([2], X, [1, 2]),
+    merge2([2], X, [1, 2]),
     test_equal(test_merge_3, [1], X).
 
 test_merge_2 :-
-    examples:merge(X, [2, 4], Y),
+    merge2(X, [2, 4], Y),
     X = [1, 3],
     test_equal(test_merge_4, [1, 2, 3, 4], Y).
 
