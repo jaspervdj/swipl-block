@@ -1,5 +1,11 @@
 % Module providing Parsing and analyzing the block operators
-:- module(block, [op(1150, fx, block), block/1, blocking/3, should_block/1]).
+:- module(block, [
+    blocking/3,
+    op(1150, fx, block),
+    block/1,
+    assert_blocking_triples/1,
+    parse_block_decl/2,
+    should_block/1]).
 
 % We keep a dynamic predicate of predicates at which we should block. In this 
 % structure, we store a triple for each blocking predicate. This triple holds:
@@ -20,35 +26,43 @@
 
 % Necessary so the user can specify multiple blocking calls in a single
 % operation
-block((X, Y)) :-
-    block(X),
-    block(Y).
 block(X):-
-    parse_block(1, X, L),
-    functor(X, Name, Arity),
+    parse_block_decl(X, L),
+    assert_blocking_triples(L).
 
-    % Write some debug information
+assert_blocking_triples([]).
+assert_blocking_triples([(Name, Arity, L)|Ts]) :-
     write('Blocking '),
     write(Name),
     write('/'),
     write(Arity),
     write(' at: '),
     writeln(L),
+    assert(blocking(Name, Arity, L)),
+    assert_blocking_triples(Ts).
 
-    % write('Asserting: '),
-    % writeln((blocking(Name, L))),
-    assert(blocking(Name, Arity, L)).
+% Parse a block declaration return a list of triples.
+parse_block_decl(D, R) :-
+    ( (D1, D2) = D ->
+        parse_block_decl(D1, R1),
+        parse_block_decl(D2, R2),
+        append(R1, R2, R)
+    ;
+        parse_block_decl(1, D, L),
+        functor(D, Name, Arity),
+        R = [(Name, Arity, L)]
+    ).
 
 % Parse a block specification. Third argument is the return value: a list of
 % indices at which the code should block.
-parse_block(N, X, L) :-
+parse_block_decl(N, X, L) :-
     functor(X, _, Size),
     ( N > Size ->
         L = []
     ;
         arg(N, X, Descr),
         N1 is N + 1,
-        parse_block(N1, X, L1),
+        parse_block_decl(N1, X, L1),
         ( Descr = '-' ->
             L = [N|L1]
         ;

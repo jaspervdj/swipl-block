@@ -3,10 +3,6 @@
 :- use_module(library(lists)).
 :- use_module(block).
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% The interpreter which takes block operators into account                     %
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
 % Main entry point to the interpreter
 eval(G) :-
     eval_loop(G, [], true).
