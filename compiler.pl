@@ -28,7 +28,16 @@ grounds([], []).
 grounds([X|Xs], [ground(X)|Ys]) :-
     grounds(Xs, Ys).
 
-compile(In, Out) :-
+% A term expansion to expand a fact into a predicate with a body
+expand_fact(In, Out) :-
+    ( (_ :- _) = In ->
+        Out = In
+    ;
+        Out = (In :- true)
+    ).
+
+% A term expansion to add blocking rules to predicates
+add_blocking(In, Out) :-
     (Head :- Body) = In,
 
     % (Head :- Body) = In,
@@ -49,3 +58,8 @@ compile(In, Out) :-
     write(In),
     write(' -> '),
     writeln(Out).
+
+% Our compiler
+compile(In, Out) :-
+    expand_fact(In, X),
+    add_blocking(X, Out).
