@@ -31,13 +31,7 @@ block(X):-
     assert_blocking_triples(L).
 
 assert_blocking_triples([]).
-assert_blocking_triples([(Name, Arity, L)|Ts]) :-
-    write('Blocking '),
-    write(Name),
-    write('/'),
-    write(Arity),
-    write(' at: '),
-    writeln(L),
+assert_blocking_triples([(Name, Arity, L) | Ts]) :-
     assert(blocking(Name, Arity, L)),
     assert_blocking_triples(Ts).
 
@@ -64,7 +58,7 @@ parse_block_decl(N, X, L) :-
         N1 is N + 1,
         parse_block_decl(N1, X, L1),
         ( Descr = '-' ->
-            L = [N|L1]
+            L = [N | L1]
         ;
             L = L1
         )
@@ -81,11 +75,11 @@ should_block(G) :-
 % block when the argument is uninstantiated, generate the indices at which we
 % will actually block.
 blocking_args(_, [], []).
-blocking_args(G, [I|Is], Blocking) :-
+blocking_args(G, [I | Is], Blocking) :-
     blocking_args(G, Is, B),
     arg(I, G, X),
     ( ground(X) ->
         Blocking = B
     ;
-        Blocking = [I|B]
+        Blocking = [I | B]
     ).

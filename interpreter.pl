@@ -12,7 +12,7 @@ eval_loop(G, Blocking, FirstRun) :-
     length(Blocking, B1),
     eval(G, Blocking, Blocked),
     length(Blocked, B2),
-    ( [B|Bs] = Blocked ->
+    ( [B | Bs] = Blocked ->
         % If B and G can be unified, we need to get out, otherwise we'd be
         % blocking forever.
         ( (not(FirstRun), B1 =< B2) ->
@@ -29,14 +29,7 @@ eval_loop(G, Blocking, FirstRun) :-
 eval(G, Blocking, Blocked) :-
     findall(X, (member(X, Blocking), not(should_block(X))), Runnable),
 
-    % length(Runnable, NumRunnable),
-    % write('Runnable: '),
-    % writeln(NumRunnable),
-
-    ( [R|_] = Runnable ->
-        % write('Resuming: '),
-        % writeln(R),
-
+    ( [R | _] = Runnable ->
         delete(Blocking, R, B),
         eval((R, G), B, Blocked)
 
@@ -88,10 +81,7 @@ eval(G, Blocking, Blocked) :-
         )
 
     ; should_block(G) ->
-        % write('Blocking on: '),
-        % writeln(G),
-
-        Blocked = [G|Blocking]
+        Blocked = [G | Blocking]
 
     ;
         clause(G, NG),

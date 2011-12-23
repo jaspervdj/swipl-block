@@ -5,13 +5,13 @@
 
 % Right fold using a constructor
 foldr1(_, [X], X).
-foldr1(P, [X|Xs], C) :-
+foldr1(P, [X | Xs], C) :-
     foldr1(P, Xs, Y),
     C =.. [P, X, Y].
 
 % Given a list of indices, get a list of arguments at these indices
 collect_args(_, [], []).
-collect_args(Head, [I|Is], [A|As]) :-
+collect_args(Head, [I | Is], [A | As]) :-
     arg(I, Head, A),
     collect_args(Head, Is, As).
 
@@ -23,13 +23,13 @@ block_when(Head, Is, C) :-
 
 % Apply the nonvar constructor to each element
 nonvars([], []).
-nonvars([X|Xs], [nonvar(X)|Ys]) :-
+nonvars([X | Xs], [nonvar(X) | Ys]) :-
     nonvars(Xs, Ys).
 
 % Unify the arguments of two functors
 unify_args(F, G, (A1 = A2)) :-
-    F =.. [_|A1],
-    G =.. [_|A2].
+    F =.. [_ | A1],
+    G =.. [_ | A2].
 
 % Get the name for the wrapper method
 hide_name(In, Out) :-
@@ -89,8 +89,4 @@ hide_rule(In, Out) :-
 compile(In, Out) :-
     ( compile_block(In, Out)
     ; hide_rule(In, Out)
-    ),
-    writeln(In),
-    write('-> '),
-    writeln(Out),
-    writeln('').
+    ).
