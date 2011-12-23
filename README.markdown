@@ -30,13 +30,13 @@ harder.
 - Block specifications for multiple functions must not appear in the same block
   statement. Something like this will work incorrectly:
 
-      :- block foo(?,-), bar(-,?).
+        :- block foo(?,-), bar(-,?).
 
 - Block statements for a single function must not appear in multiple statements.
   Something like this will not work correctly either:
 
-      :- block foo(?,-).
-      :- block foo(-,?).
+        :- block foo(?,-).
+        :- block foo(-,?).
 
 - We generate new predicate. For example, we generate `compiler_block_foo/2` for a
   blocking predicate `foo/2`. While unlikely, there is no guarantee this
