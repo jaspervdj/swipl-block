@@ -38,6 +38,6 @@ harder.
         :- block foo(?,-).
         :- block foo(-,?).
 
-- We generate new predicate. For example, we generate `compiler_block_foo/2` for a
-  blocking predicate `foo/2`. While unlikely, there is no guarantee this
-  predicate does not already exist.
+- We generate a new predicate which must not already exist. For example, we
+  generate `compiler_block_foo/2` for a blocking predicate `foo/2`. While
+  unlikely, there is no guarantee this predicate does not already exist.
